@@ -10,8 +10,8 @@ For this repository development environment must include:
 
 _Debian Bullseye_ distributive  
 _solidity_ - solc compiler built from https://github.com/ethereum/solidity  
-_bce_ - geth deb pakage built from https://github.com/binance-chain/bsc     
-_polygon_ - geth deb pakage built from https://github.com/maticnetwork/bor  
+_bsc-geth_ - geth deb pakage built from https://github.com/binance-chain/bsc     
+_polygon-geth_ - geth deb pakage built from https://github.com/maticnetwork/bor  
 _ethester_ - https://github.com/oklitovchenko/ethester 
 
 ### To prepare build/test enviroment:
