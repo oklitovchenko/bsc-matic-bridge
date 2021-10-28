@@ -111,6 +111,32 @@ t01: setup
 	$(POLYGON) tran @run/nft-nowner2-polygon.addr @run/bridge.addr \
         Bridge.initSwap @run/nft-nowner2-polygon.addr @run/nft-owner.addr \
         2 1212 --expect-revert
+	@echo "\n** Check swap init through direct sending token on bridge **\n"
+# Check swap init thtouth dirct sending token on bridge
+	@echo "\n** Make data to run safeTransferFrom(address, address, uint256, bytes) **\n"
+	@echo "\"`sed 's/0x/0x000000000000000000000000/' run/nft-nowner2-polygon.addr`\"" > run/call.data
+	@sed -i 's/0x/0x0000000000000000000000000000000000000000000000000000000000000849/' run/call.data
+	@echo "\n** Check data **\n"
+	$(BSC) call @run/bridge.addr \
+        Bridge.parseCallDataOnERC721Received @run/call.data -e '[@run/nft-nowner2-polygon.addr, 2121]'
+	@echo "\n** Run direct tx **\n"
+	$(BSC) tran @run/nft-nowner1-bsc.addr @run/bsc-simpleNFT.addr \
+        SimpleNFT.safeTransferFrom @run/nft-nowner1-bsc.addr @run/bridge.addr \
+        4 @run/call.data
+	@echo "\n** Check new event **\n"
+	$(BSC) events 0 latest @run/bridge.addr \
+        --event Bridge.Swap --quiet --expect 2
+	$(BSC) events 0 latest @run/bridge.addr \
+        --event Bridge.Swap --field 1.topics.1 > run/nonce
+	$(BSC) exec "web3.personal.unlockAccount(\"`cat run/validator.addr`\",\"\", 8000)"
+	$(BSC) exec "eth.sign(\"`cat run/validator.addr`\", `cat run/nonce`)" > run/sig
+	$(POLYGON) call @run/bsc-simpleNFT.addr SimpleNFT.ownerOf 4 -e @run/bridge.addr
+	$(POLYGON) tran @run/coinbase.addr @run/bridge.addr \
+        Bridge.redeemSwap @run/nft-nowner1-bsc.addr @run/nft-nowner2-polygon.addr \
+        4 1212 @run/nonce @run/sig
+	@echo "\n** Check ownership transferred from BSC to Polygon by direct tx **\n"
+	$(BSC) call @run/bsc-simpleNFT.addr SimpleNFT.ownerOf 4 -e @run/bridge.addr
+	$(POLYGON) call @run/bsc-simpleNFT.addr SimpleNFT.ownerOf 4 -e @run/nft-nowner2-polygon.addr
 
 deploy-contracts:
 	@echo "\n** $@ **\n"

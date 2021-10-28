@@ -26,6 +26,8 @@ contract Bridge is Ownable, IERC721Receiver, ERC165 {
     // before deploy in production delete it and use block.chainid
     uint256 private _chainID;
 
+    bool isOnERC721Received;
+
     // If this event is stored in BC it generates an obligation of
     // the Validator to perform the procedure for the transfer of
     // ownership of the token in the target network
@@ -80,7 +82,8 @@ contract Bridge is Ownable, IERC721Receiver, ERC165 {
         _swapInit[swapTxHash] = true;
 
         // lock token on bridge contract
-        _NFT.safeTransferFrom(from, address(this), tokenId);
+        if (!isOnERC721Received)
+            _NFT.safeTransferFrom(from, address(this), tokenId);
 
         // Use event to to store swap init tx in BC
         emit Swap(
@@ -129,6 +132,24 @@ contract Bridge is Ownable, IERC721Receiver, ERC165 {
         uint256 tokenId,
         bytes calldata data
     ) external virtual override returns (bytes4) {
+        // check if onERC721Received called by _NFT contract
+        require(_msgSender() == address(_NFT));
+
+        if (data.length == 0) return IERC721Receiver.onERC721Received.selector;
+
+        // revert if data has wrong length
+        require(data.length == 64, "Bridge: wrong swap request");
+
+        // parse calldata to extract destination address in destination chain
+        (address to, uint256 toChainID) = parseCallDataOnERC721Received(data);
+
+        // check if data looks like valid to init swap
+        require(to != address(0) && toChainID != 0);
+
+        isOnERC721Received = true;
+        initSwap(from, to, tokenId, toChainID);
+        isOnERC721Received = false;
+
         return IERC721Receiver.onERC721Received.selector;
     }
 
@@ -142,5 +163,14 @@ contract Bridge is Ownable, IERC721Receiver, ERC165 {
 
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
         return interfaceId == type(IERC721Receiver).interfaceId || super.supportsInterface(interfaceId);
+    }
+
+    function parseCallDataOnERC721Received(bytes calldata data)
+        public pure
+        returns (address to, uint256 toChainID) {
+        assembly {
+            to := calldataload(add(data.offset, 32))
+            toChainID := calldataload(data.offset)
+        }
     }
 }
