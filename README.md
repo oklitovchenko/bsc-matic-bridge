@@ -18,7 +18,7 @@ _ethester_ - https://github.com/oklitovchenko/ethester
 ```
 apt-get update -y
 apt-get install -y wget
-wget https://github.com/oklitovchenko/ethester/releases/download/0.11.1/ethester_0.11.1_all.deb
+wget https://github.com/oklitovchenko/ethester/releases/download/0.12.0/ethester_0.12.0_all.deb
 wget https://github.com/oklitovchenko/deb-ethereum/releases/download/1.0.0/bsc_1.0.0_amd64.deb
 wget https://github.com/oklitovchenko/deb-ethereum/releases/download/1.0.0/polygon_1.0.0_amd64.deb
 wget https://github.com/oklitovchenko/deb-ethereum/releases/download/1.0.0/solidity_1.0.0_amd64.deb
